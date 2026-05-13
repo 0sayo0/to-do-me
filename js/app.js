@@ -11,6 +11,12 @@ const titleInput = document.querySelector("#title");
 const descriptionInput = document.querySelector("#description");
 
 // LISTENERS
+document.addEventListener("DOMContentLoaded", () => {
+  // When the page loads, tell the UI to display the tasks that the TaskManager just retrieved.
+  ui.showTasks(taskManager.tasks);
+  ui.showDefaultMessage(taskManager.tasks);
+});
+
 // 1. Activar el modal con tu botón
 newTaskBtn.addEventListener("click", () => {
   updating = false;
@@ -41,13 +47,16 @@ modal.addEventListener("click", (e) => {
 
 formTask.addEventListener("submit", dataTask);
 
+deleteAllBtn.addEventListener("click", handleDeleteAllTasks);
+
+// Axiliar Variables
 let updating;
 let currentId;
 
 // Classes
 class TaskManager {
   constructor() {
-    this.tasks = [];
+    this.tasks = JSON.parse(localStorage.getItem("tasks")) || [];
   }
 
   addTask(title, description) {
@@ -59,6 +68,8 @@ class TaskManager {
     };
 
     this.tasks = [...this.tasks, task];
+
+    localStorage.setItem("tasks", JSON.stringify(this.tasks));
 
     ui.showTasks(this.tasks);
   }
@@ -75,7 +86,23 @@ class TaskManager {
       task.id === taskId ? updatedTask : task,
     );
 
+    localStorage.setItem("tasks", JSON.stringify(this.tasks));
+
     ui.showTasks(this.tasks);
+  }
+
+  deleteTask(id) {
+    this.tasks = this.tasks.filter((task) => task.id !== id);
+    localStorage.setItem("tasks", JSON.stringify(this.tasks));
+    ui.showTasks(this.tasks);
+    ui.showDefaultMessage(this.tasks);
+  }
+
+  deleteAllTasks() {
+    this.tasks = [];
+    localStorage.setItem("tasks", JSON.stringify(this.tasks));
+    ui.showTasks(this.tasks);
+    ui.showDefaultMessage(this.tasks);
   }
 }
 
@@ -194,6 +221,8 @@ class UI {
         "transition-all",
       );
 
+      deleteBtn.onclick = () => handleDeleting(task.id);
+
       // Inject into HTML
       infoTask.appendChild(taskTitle);
       infoTask.appendChild(taskDescription);
@@ -228,6 +257,16 @@ class UI {
         }
       };
     });
+  }
+
+  showDefaultMessage(tasks) {
+    if (tasks.length === 0) {
+      const defaultMessage = document.createElement("P");
+      defaultMessage.textContent = "No hay tareas pendientes";
+      defaultMessage.classList.add("text-zinc-500");
+
+      taskContainer.appendChild(defaultMessage);
+    }
   }
 }
 
@@ -269,4 +308,12 @@ function handleUpdating(title, description, id) {
   descriptionInput.value = description;
 
   currentId = id;
+}
+
+function handleDeleting(id) {
+  taskManager.deleteTask(id);
+}
+
+function handleDeleteAllTasks() {
+  taskManager.deleteAllTasks();
 }
